@@ -23,3 +23,8 @@ POST `/api/videos/upload-url` creates a presigned S3 upload URL. Upload source v
 
 ## Security & production notes
 Use HTTPS, set strong secrets, restrict CORS, enforce rate limits, use a managed MongoDB/Redis, configure S3 bucket policy/CloudFront OAC, review retention/consent and payment compliance. Demo signup role selection is gated for admin; do not expose admin signup in production. LiveKit and Razorpay features require credentials.
+
+## Phase 2 — Course studio and video upload
+Instructor course management, lessons, upload lifecycle, and publication controls are implemented in `server/src/courseRoutes.js` and `client/src/pages/Studio.jsx`. Setup and infrastructure requirements are in `docs/PHASE2-COURSE-STUDIO.md`.
+
+Run the API, Redis, MongoDB, FFmpeg video worker, and Vite client separately. The video upload feature requires a configured S3 bucket, bucket CORS, and CloudFront output distribution. New courses are drafts and cannot publish until at least one lesson's HLS conversion completes.

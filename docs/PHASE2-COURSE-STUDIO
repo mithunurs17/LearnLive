@@ -1,0 +1,107 @@
+# Phase 2 — Course management, instructor studio, lessons & secure video upload
+
+## Included
+- Instructor/admin-owned draft course CRUD, course details and metadata editing.
+- Lesson creation, metadata editing, removal, deterministic lesson order.
+- Instructor studio UI: course selector, draft form, lesson manager, upload feedback, publish/unpublish controls.
+- S3 direct-to-storage upload with short-lived presigned URLs, randomized scoped object keys, allowed MIME types, 2 GB requested-size limit, exact content-length/type validation, upload ownership and lesson binding.
+- VideoAsset records with upload/processing lifecycle and worker job tracking.
+- Publish gate: a course needs at least one lesson and every lesson must have a ready HLS video.
+- Background FFmpeg HLS packaging to S3 and CloudFront playback URL assignment.
+- Public catalog only returns published courses; public responses exclude quiz answer keys. The former generic write/upload APIs have been removed.
+
+## Environment
+Set these in `server/.env` (never expose server secrets in Vite/client variables):
+
+```env
+MONGODB_URI=mongodb://127.0.0.1:27017/learnlive
+JWT_SECRET=replace_with_a_random_secret_at_least_32_chars
+CLIENT_ORIGIN=http://localhost:5173
+REDIS_URL=redis://127.0.0.1:6379
+AWS_REGION=ap-south-1
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+S3_BUCKET=your-private-video-bucket
+CLOUDFRONT_DOMAIN=your-distribution-domain.cloudfront.net
+VIDEO_WORKER_CONCURRENCY=2
+```
+
+Use an IAM role on production compute instead of long-lived access keys. Minimum permissions: `s3:PutObject` and `s3:GetObject` on this bucket's `sources/*` and `hls/*` object prefixes. Do not grant public bucket access. Configure CloudFront Origin Access Control to read `hls/*` only. Configure the distribution behavior to serve HLS playlists and segments; do not expose `sources/*` through CloudFront.
+
+### S3 CORS
+Replace the example origin with the exact deployed frontend origin. Apply using AWS Console S3 → bucket → Permissions → CORS, or save as `cors.json` and use `aws s3api put-bucket-cors --bucket YOUR_BUCKET --cors-configuration file://cors.json`.
+
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:5173", "https://your-frontend.example"],
+    "AllowedMethods": ["PUT", "HEAD", "GET"],
+    "AllowedHeaders": ["Content-Type", "*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+### FFmpeg
+Install FFmpeg on the worker host/container and ensure `ffmpeg -version` works. Run the worker as a separate process. On Windows development, install FFmpeg and add its `bin` folder to PATH. Production should use a worker container image with a pinned FFmpeg version.
+
+## Run locally
+Open separate terminals from project root:
+
+```bash
+# Terminal 1 — MongoDB and Redis must be running
+cd server
+npm install
+npm run dev
+
+# Terminal 2 — video processing worker
+cd server
+npm run worker
+
+# Terminal 3 — React/Vite
+cd client
+npm install
+npm run dev
+```
+
+Grant an administrator role to an account using Phase 1's admin account-management flow, then have the admin assign `instructor` role. Log in as that instructor and open **Instructor studio**.
+
+## Video flow
+1. Instructor creates draft and adds a lesson.
+2. Studio requests an upload intent; API verifies instructor/course/lesson, file MIME and declared size, then creates a VideoAsset and signs a 10-minute S3 PUT URL for one randomized object key.
+3. Browser PUTs the selected file directly to S3 (the API never buffers the large video).
+4. Browser calls upload-complete. API checks exact stored length and MIME, verifies asset ownership/state, and queues processing.
+5. Worker fetches only the stored source key, runs FFmpeg to create HLS, uploads playlist/segments, and updates the specific lesson to `ready`.
+6. Instructor can publish only after all lesson videos are ready.
+
+## Instructor course API
+All routes below require a valid session and instructor/admin role:
+- `GET /api/instructor/courses/mine`
+- `POST /api/instructor/courses`
+- `GET /api/instructor/courses/:id`
+- `PATCH /api/instructor/courses/:id`
+- `POST /api/instructor/courses/:id/lessons`
+- `PATCH /api/instructor/courses/:id/lessons/:lessonId`
+- `DELETE /api/instructor/courses/:id/lessons/:lessonId`
+- `POST /api/instructor/courses/:id/lessons/:lessonId/upload-intent`
+- `POST /api/instructor/courses/assets/:assetId/upload-complete`
+- `GET /api/instructor/courses/assets/:assetId`
+- `POST /api/instructor/courses/:id/publish`
+- `POST /api/instructor/courses/:id/unpublish`
+
+## Smoke test
+1. Login as instructor A and create a draft. Verify it does not appear in public `GET /api/courses`.
+2. Add a lesson, upload a supported video smaller than 2 GB, then wait for worker state `ready`.
+3. Verify its playback playlist loads through CloudFront and includes segment requests.
+4. Publish; verify course appears in public catalog.
+5. Login as instructor B and try to open/update instructor A's course and upload asset; expect `403` (unknown resource IDs may return `404`).
+6. Try unsupported MIME, zero size, declared size above limit, upload-complete twice, and publish with missing/processing video; expect rejection.
+7. Disable the owning instructor from the Phase 1 admin screen; authenticated APIs should deny the session.
+
+## Operational/security notes
+- Presigned PUTs are bearer URLs; treat them as secrets and keep expiry short. Upload content type is not a proof of safe media. For internet-facing deployments, add media scanning, stronger container limits, FFmpeg sandboxing, upload quotas, abuse throttling and source cleanup lifecycle rules.
+- Configure queue persistence/Redis access control, worker retry/dead-letter alerting, storage budgets and monitoring.
+- Current HLS outputs are public via the configured CloudFront distribution. For paid/private courses, replace public playback URLs with CloudFront signed cookies/URLs or an authenticated media delivery design before launch.
+- Course/lesson mutation is instructor-owned. Enrolled users and curriculum progress migration behavior should be tested when editing a course already used by students.
+- Verify course catalog and playback end-to-end with real AWS resources; a syntax check alone cannot validate cloud policies.

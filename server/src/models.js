@@ -1,11 +1,10 @@
-
 import mongoose from 'mongoose';
 
 const { Schema, model } = mongoose;
 
-/* =========================================
-   USER MODEL
-========================================= */
+// ==========================================
+// USER MODEL - PHASE 1 AUTHENTICATION
+// ==========================================
 
 const userSchema = new Schema(
   {
@@ -50,7 +49,8 @@ const userSchema = new Schema(
     tokenVersion: {
       type: Number,
       default: 0,
-      select: false
+      select: false,
+      min: 0
     }
   },
   {
@@ -59,17 +59,88 @@ const userSchema = new Schema(
   }
 );
 
-// Unique email index
-userSchema.index({ email: 1 }, { unique: true });
+// userSchema.index({ email: 1 }, { unique: true });
 
-export const User =
-  mongoose.models.User ||
-  model('User', userSchema);
+export const User = model('User', userSchema);
 
 
-/* =========================================
-   COURSE MODEL
-========================================= */
+// ==========================================
+// LESSON SCHEMA
+// ==========================================
+
+const lessonSchema = new Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 180
+    },
+
+    description: {
+      type: String,
+      trim: true,
+      maxlength: 4000,
+      default: ''
+    },
+
+    // Legacy / externally hosted video URL.
+    // Do not use this field to expose private S3 object keys.
+    videoUrl: {
+      type: String,
+      maxlength: 2048,
+      default: undefined
+    },
+
+    // References the managed video asset.
+    videoAssetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'VideoAsset',
+      default: undefined
+    },
+
+    videoStatus: {
+      type: String,
+      enum: [
+        'missing',
+        'uploading',
+        'processing',
+        'ready',
+        'failed'
+      ],
+      default: 'missing'
+    },
+
+    durationSec: {
+      type: Number,
+      min: 0,
+      default: undefined,
+      validate: {
+        validator: Number.isFinite,
+        message: 'Duration must be a finite number'
+      }
+    },
+
+    order: {
+      type: Number,
+      min: 0,
+      required: true,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Lesson order must be an integer'
+      }
+    }
+  },
+  {
+    timestamps: true
+  }
+);
+
+
+// ==========================================
+// COURSE MODEL
+// ==========================================
 
 const courseSchema = new Schema(
   {
@@ -83,12 +154,15 @@ const courseSchema = new Schema(
 
     description: {
       type: String,
-      maxlength: 10000
+      maxlength: 10000,
+      default: ''
     },
 
     category: {
       type: String,
-      maxlength: 100
+      trim: true,
+      maxlength: 100,
+      default: ''
     },
 
     pricePaise: {
@@ -97,22 +171,29 @@ const courseSchema = new Schema(
       min: 0,
       validate: {
         validator: Number.isSafeInteger,
-        message: 'pricePaise must be a safe integer'
+        message: 'Course price must be a safe integer in paise'
       }
     },
 
     instructor: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true
+      required: true,
+      index: true
     },
 
     published: {
       type: Boolean,
-      default: false
+      default: false,
+      index: true
     },
 
-    lessons: [
+    lessons: {
+      type: [lessonSchema],
+      default: []
+    },
+
+    quizzes: [
       {
         title: {
           type: String,
@@ -120,36 +201,18 @@ const courseSchema = new Schema(
           maxlength: 180
         },
 
-        description: {
-          type: String,
-          maxlength: 4000
-        },
-
-        videoUrl: {
-          type: String,
-          maxlength: 2048
-        },
-
-        durationSec: {
-          type: Number,
-          min: 0
-        },
-
-        order: {
-          type: Number,
-          min: 0
-        }
-      }
-    ],
-
-    quizzes: [
-      {
-        title: String,
-
         questions: [
           {
-            prompt: String,
-            options: [String],
+            prompt: {
+              type: String,
+              trim: true,
+              maxlength: 4000
+            },
+
+            options: {
+              type: [String],
+              default: []
+            },
 
             correctIndex: {
               type: Number,
@@ -159,7 +222,11 @@ const courseSchema = new Schema(
             points: {
               type: Number,
               default: 1,
-              min: 1
+              min: 1,
+              validate: {
+                validator: Number.isSafeInteger,
+                message: 'Points must be an integer'
+              }
             }
           }
         ]
@@ -172,14 +239,138 @@ const courseSchema = new Schema(
   }
 );
 
-export const Course =
-  mongoose.models.Course ||
-  model('Course', courseSchema);
+// Useful for public course catalog queries.
+courseSchema.index({ published: 1, createdAt: -1 });
+
+// Useful for instructor course listing.
+courseSchema.index({ instructor: 1, updatedAt: -1 });
+
+export const Course = model('Course', courseSchema);
 
 
-/* =========================================
-   ENROLLMENT MODEL
-========================================= */
+// ==========================================
+// VIDEO ASSET MODEL - PHASE 2
+// ==========================================
+
+const videoAssetSchema = new Schema(
+  {
+    course: {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
+      required: true,
+      index: true
+    },
+
+    lesson: {
+      type: Schema.Types.ObjectId,
+      required: true
+    },
+
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true
+    },
+
+    // Private source object key.
+    // Never return this as a public playback URL.
+    key: {
+      type: String,
+      required: true,
+      unique: true
+    },
+
+    originalName: {
+      type: String,
+      required: true,
+      maxlength: 255
+    },
+
+    contentType: {
+      type: String,
+      required: true,
+      enum: [
+        'video/mp4',
+        'video/quicktime',
+        'video/webm'
+      ]
+    },
+
+    expectedBytes: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 2147483648,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Expected file size must be a safe integer'
+      }
+    },
+
+    status: {
+      type: String,
+      enum: [
+        'awaiting-upload',
+        'queued',
+        'processing',
+        'ready',
+        'failed'
+      ],
+      default: 'awaiting-upload',
+      index: true
+    },
+
+    // Background processing job identifier.
+    jobId: {
+      type: String,
+      default: undefined
+    },
+
+    // HLS playback URL after successful processing.
+    playbackUrl: {
+      type: String,
+      maxlength: 2048,
+      default: undefined
+    },
+
+    // Optional output object prefix.
+    outputKey: {
+      type: String,
+      default: undefined
+    },
+
+    error: {
+      type: String,
+      maxlength: 1000,
+      default: undefined
+    },
+
+    // Actual source object size verified by server.
+    actualBytes: {
+      type: Number,
+      min: 1,
+      default: undefined
+    }
+  },
+  {
+    timestamps: true,
+    versionKey: false
+  }
+);
+
+// Worker/admin monitoring queries.
+videoAssetSchema.index({ status: 1, updatedAt: -1 });
+
+// Course-level asset lookup.
+videoAssetSchema.index({ course: 1, lesson: 1, createdAt: -1 });
+
+export const VideoAsset = model('VideoAsset', videoAssetSchema);
+
+
+// ==========================================
+// ENROLLMENT MODEL
+// ==========================================
 
 const enrollmentSchema = new Schema(
   {
@@ -209,7 +400,8 @@ const enrollmentSchema = new Schema(
     ],
 
     completedAt: {
-      type: Date
+      type: Date,
+      default: undefined
     }
   },
   {
@@ -218,46 +410,52 @@ const enrollmentSchema = new Schema(
   }
 );
 
-// One enrollment per student per course
+// Prevent duplicate enrollment.
 enrollmentSchema.index(
   { student: 1, course: 1 },
   { unique: true }
 );
 
-export const Enrollment =
-  mongoose.models.Enrollment ||
-  model('Enrollment', enrollmentSchema);
+export const Enrollment = model('Enrollment', enrollmentSchema);
 
 
-/* =========================================
-   PAYMENT MODEL
-========================================= */
+// ==========================================
+// PAYMENT MODEL
+// ==========================================
 
 const paymentSchema = new Schema(
   {
     student: {
       type: Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
+      required: true
     },
 
     course: {
       type: Schema.Types.ObjectId,
-      ref: 'Course'
+      ref: 'Course',
+      required: true
     },
 
     providerOrderId: {
       type: String,
-      unique: true,
-      sparse: true
+      required: true,
+      unique: true
     },
 
     paymentId: {
-      type: String
+      type: String,
+      default: undefined
     },
 
     amount: {
       type: Number,
-      min: 0
+      required: true,
+      min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Payment amount must be an integer'
+      }
     },
 
     status: {
@@ -272,15 +470,12 @@ const paymentSchema = new Schema(
   }
 );
 
-export const Payment =
-  mongoose.models.Payment ||
-  model('Payment', paymentSchema);
+export const Payment = model('Payment', paymentSchema);
 
 
-/* =========================================
-   AUTH BOOTSTRAP MARKER
-   Required by authRoutes.js
-========================================= */
+// ==========================================
+// BOOTSTRAP MARKER - PHASE 1
+// ==========================================
 
 const bootstrapMarkerSchema = new Schema(
   {
@@ -295,11 +490,12 @@ const bootstrapMarkerSchema = new Schema(
     }
   },
   {
-    collection: 'auth_bootstrap_markers',
     versionKey: false
   }
 );
 
-export const BootstrapMarker =
-  mongoose.models.BootstrapMarker ||
-  model('BootstrapMarker', bootstrapMarkerSchema);
+export const BootstrapMarker = model(
+  'BootstrapMarker',
+  bootstrapMarkerSchema,
+  'auth_bootstrap_markers'
+);

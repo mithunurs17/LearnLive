@@ -21,3 +21,7 @@ All paths prefixed `/api`. Protected endpoints require `Authorization: Bearer <J
 - `POST /live/token` `{room}`
 - `POST /videos/upload-url` `{filename,contentType}`; presigned source upload
 - `POST /videos/process` `{key}`; `GET /videos/jobs/:id`
+
+
+## Phase 2: Instructor course studio
+Instructor/admin session required: `GET /api/instructor/courses/mine`, `POST /api/instructor/courses`, `GET/PATCH /api/instructor/courses/:id`, `POST /api/instructor/courses/:id/lessons`, `PATCH/DELETE /api/instructor/courses/:id/lessons/:lessonId`, `POST /api/instructor/courses/:id/lessons/:lessonId/upload-intent`, `POST /api/instructor/courses/assets/:assetId/upload-complete`, `GET /api/instructor/courses/assets/:assetId`, `POST /api/instructor/courses/:id/publish`, `POST /api/instructor/courses/:id/unpublish`. Details and request examples are documented in `PHASE2-COURSE-STUDIO.md`.
