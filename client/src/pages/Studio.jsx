@@ -1,0 +1,1 @@
+import React from 'react';export default function Studio(){return <main className="shell"><h1>Instructor Studio</h1><p>Use the quick publish panel on the home page to create a course. Full lesson editor and upload pipeline are available through documented API endpoints.</p></main>}

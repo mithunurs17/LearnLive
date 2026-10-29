@@ -1,0 +1,1 @@
+Live classroom and analytics screens are included as integration components; the main App can be extended with routes as desired.

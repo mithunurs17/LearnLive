@@ -1,0 +1,14 @@
+# Verification checklist
+- [ ] `GET /api/health` returns `{ok:true}`
+- [ ] Register/login student; invalid password returns 401
+- [ ] Instructor creates/publishes course; student enrolls
+- [ ] Lesson complete increments progress; completion issues PDF certificate
+- [ ] Quiz grading checks known correct/incorrect answer fixtures
+- [ ] Non-owner instructor cannot edit another instructor's course
+- [ ] Student cannot access instructor analytics or video endpoints
+- [ ] Razorpay test order/signature verification (valid + invalid signature)
+- [ ] LiveKit token creation and two-browser join/audio/video/chat
+- [ ] Upload a licensed test video, run worker; verify playlist and segments via CloudFront
+- [ ] `npm run build` in client; inspect browser console/network
+- [ ] API integration tests for malformed IDs, payload bounds, duplicate payment callbacks
+- [ ] Load test browse/course and media delivery; record latency/error rates

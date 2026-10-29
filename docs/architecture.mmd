@@ -1,0 +1,12 @@
+flowchart LR
+ Student[Student / Instructor / Admin] --> Web[React + Redux Toolkit]
+ Web --> API[Express REST API]
+ API --> Mongo[(MongoDB)]
+ API --> Redis[(Redis / BullMQ)]
+ API --> Pay[Razorpay Test]
+ API --> LK[LiveKit WebRTC]
+ API --> S3[(S3 Source + HLS)]
+ Redis --> Worker[FFmpeg Worker]
+ Worker --> S3
+ S3 --> CDN[CloudFront]
+ CDN --> Web
