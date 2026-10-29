@@ -2,3 +2,42 @@
 /* Phase 2 — instructor studio */
 .studioPage{padding-top:28px}.studioHeading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0}.studioHeading h1{font:800 clamp(32px,5vw,46px) Manrope;letter-spacing:-1.5px;margin:8px 0}.studioHeading p{margin:0}.studioLayout{display:grid;grid-template-columns:minmax(220px,.72fr) minmax(0,1.8fr);gap:18px;align-items:start}.studioList{position:sticky;top:16px}.studioList h2 small,.lessonHeader h2 small{font-size:13px;color:#938792}.studioCourse{display:grid;gap:7px;width:100%;text-align:left;border:1px solid #eee6ed;background:white;border-radius:10px;padding:13px;margin:8px 0;cursor:pointer;color:#493247}.studioCourse span{font-size:11px;color:#887c88}.studioCourse.selected{border-color:#94658a;background:#f8f0f6;box-shadow:0 0 0 2px #94658a14}.studioEditor{min-width:0}.studioForm{display:grid;gap:11px;max-width:100%;margin:12px 0 22px}.studioForm input,.studioForm textarea,.studioForm label input{width:100%;font:inherit;border:1px solid #e2dce2;border-radius:8px;padding:12px;background:white}.studioForm textarea{min-height:90px;resize:vertical}.studioForm label{display:grid;gap:7px;font-size:12px;color:#766b76}.studioForm button{justify-self:start}.studioForm h3{font:700 18px Manrope;margin:12px 0 0}.editorTitle{display:flex;justify-content:space-between;align-items:center;gap:10px}.editorTitle h2{margin:8px 0 16px;overflow-wrap:anywhere}.statusPill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:#f3eee7;color:#74634b;border-radius:99px;padding:6px 9px;white-space:nowrap}.statusPill.published{background:#e6f4ec;color:#256845}.lessonHeader{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eee7ed;padding-top:12px}.studioLessons{display:grid;gap:12px}.studioLesson{border:1px solid #eee6ed;border-radius:12px;padding:14px}.lessonTitle{display:flex;justify-content:space-between;align-items:center;gap:12px}.studioLesson p{font-size:12px;margin:8px 0}.uploadRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:13px 0 8px}.uploadRow input[type=file]{min-width:180px;max-width:100%;font-size:11px;flex:1}.uploadRow button{white-space:nowrap}.danger{background:#f8e9e9;color:#923d3d}.readyText{display:inline-block;color:#256845;margin-top:8px}.addLessonForm{border-top:1px solid #eee7ed;margin-top:20px;padding-top:12px}.publishRow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid #eee7ed;padding-top:14px}.publishRow p{font-size:12px;max-width:430px}.publishRow button:disabled,.studioForm button:disabled,.uploadRow button:disabled{opacity:.55;cursor:not-allowed}.studioError{background:#fff0f0;color:#942e37;padding:12px 15px;border-radius:8px}.studioFootnote{font-size:12px;line-height:1.7;margin:20px 0 40px}@media(max-width:780px){.studioLayout{grid-template-columns:1fr}.studioList{position:static}.studioHeading{align-items:flex-start}.uploadRow{align-items:stretch}.uploadRow input[type=file]{flex-basis:100%}}
 .enrolledLesson{display:grid;gap:6px;min-width:200px}.lessonVideo{display:block;width:min(100%,520px);max-height:300px;background:#171417;border-radius:10px}.enroll .lessonActions{align-items:start}
+
+
+/* High-visibility toast layer: portal-mounted on document.body to avoid clipping/stacking contexts. */
+.toastViewport{
+  position:fixed !important;
+  right:max(24px,env(safe-area-inset-right)) !important;
+  bottom:max(24px,env(safe-area-inset-bottom)) !important;
+  top:auto !important; left:auto !important;
+  z-index:2147483647 !important;
+  display:flex; flex-direction:column; align-items:stretch; gap:12px;
+  width:min(440px,calc(100vw - 32px)); max-height:calc(100vh - 48px); overflow:visible;
+  pointer-events:none; isolation:isolate;
+}
+.appToast{
+  position:relative; flex:0 0 auto; display:flex; align-items:flex-start; gap:12px;
+  overflow:hidden; padding:17px 15px 20px;
+  background:#32172f; color:#fff; border:1px solid #b78bab; border-left:6px solid #f0c84b;
+  border-radius:15px; box-shadow:0 18px 55px rgba(21,7,20,.42),0 0 0 1px rgba(255,255,255,.12);
+  pointer-events:auto; animation:toastEnterRight .42s cubic-bezier(.18,.86,.24,1.08) both;
+}
+.appToast--success{border-left-color:#4ce0a0}
+.appToast--error{border-left-color:#ff6473}
+.appToast--info{border-left-color:#f0c84b}
+.appToastIcon{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:#56344f;color:#fff;font-weight:900;font-size:16px;border:1px solid #95738e}
+.appToast--success .appToastIcon{background:#174d3b;color:#a4ffd2;border-color:#4ce0a0}
+.appToast--error .appToastIcon{background:#5a222d;color:#ffd4d9;border-color:#ff6473}
+.appToast--info .appToastIcon{background:#5c4815;color:#fff1b7;border-color:#f0c84b}
+.appToast p{flex:1;margin:2px 0 0;color:#fff;font-size:14px;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+.appToastClose{flex:0 0 auto;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:23px;line-height:1;padding:0 6px 3px;border-radius:7px;cursor:pointer}
+.appToastClose:hover{background:rgba(255,255,255,.24)}
+.appToastTimer{position:absolute;bottom:0;left:0;width:100%;height:4px;background:rgba(255,255,255,.18);transform-origin:left}
+.appToastTimer:after{content:"";display:block;height:100%;background:#f0c84b;animation:toastTimer 4.8s linear both}
+.appToast--success .appToastTimer:after{background:#4ce0a0}
+.appToast--error .appToastTimer:after{background:#ff6473}
+.appToast--info .appToastTimer:after{background:#f0c84b}
+@keyframes toastEnterRight{from{opacity:0;transform:translate3d(115%,0,0) scale(.97)}to{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+@keyframes toastTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@media(max-width:600px){.toastViewport{right:12px !important;bottom:max(12px,env(safe-area-inset-bottom)) !important;width:calc(100vw - 24px)}.appToast{padding:14px 12px 18px}.appToast p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.appToast{animation:none}.appToastTimer:after{animation-duration:0s}}
