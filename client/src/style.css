@@ -139,3 +139,4 @@
 .liveRoomStage{flex:1;min-height:0}.liveRoomStage .lk-room-container,.liveRoomStage .lk-video-conference{height:100%}
 @media(max-width:640px){.liveFormRow{grid-template-columns:1fr}}
 .mediaBlocked{max-width:640px;margin:10px auto}.mediaBlocked code{background:#f2eaf1;padding:1px 6px;border-radius:5px}
+.catalogTools{display:flex;align-items:center;gap:12px}

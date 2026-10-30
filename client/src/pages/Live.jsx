@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { LiveKitRoom, VideoConference, PreJoin } from '@livekit/components-react';
 import '@livekit/components-styles';
@@ -185,6 +185,9 @@ function LiveRoom({ session, user, onExit }) {
   const cls = session.class;
   const [state, setState] = useState('connecting');
   const [mediaWarning, setMediaWarning] = useState('');
+  // Stable option objects: new objects on every render make LiveKitRoom re-run its connect logic ("already connected" warnings).
+  const audioOpt = useMemo(() => (choices?.noMedia || choices?.audioEnabled === false ? false : { deviceId: choices?.audioDeviceId || undefined }), [choices]);
+  const videoOpt = useMemo(() => (choices?.noMedia || !choices?.videoEnabled ? false : { deviceId: choices?.videoDeviceId || undefined }), [choices]);
   const exited = useRef(false);
   const base = api.defaults.baseURL;
 
@@ -216,8 +219,8 @@ function LiveRoom({ session, user, onExit }) {
     {mediaWarning && <p className="studioError" role="alert" style={{margin:0,borderRadius:0}}>{mediaWarning} <button className="small" onClick={() => setMediaWarning('')}>Dismiss</button></p>}
     <div className="liveRoomStage" data-lk-theme="default">
       <LiveKitRoom token={token} serverUrl={url} connect
-        audio={choices?.noMedia || choices?.audioEnabled === false ? false : { deviceId: choices?.audioDeviceId || undefined }}
-        video={choices?.noMedia || !choices?.videoEnabled ? false : { deviceId: choices?.videoDeviceId || undefined }}
+        audio={audioOpt}
+        video={videoOpt}
         onMediaDeviceFailure={f => setMediaWarning('Your camera or microphone could not be used. Check browser permissions (the lock icon in the address bar) and that no other app is using the device. You can still watch and chat.')}
         onConnected={() => setState('connected')}
         onError={() => setState('error')}
