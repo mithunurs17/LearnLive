@@ -536,3 +536,25 @@ const liveAttendanceSchema = new Schema(
 liveAttendanceSchema.index({ liveClass: 1, user: 1 }, { unique: true });
 // Dedicated collection name: an older `liveattendances` collection may carry a stale unique index (session+student).
 export const LiveAttendance = model('LiveAttendance', liveAttendanceSchema, 'learnlive_class_attendance');
+
+// ==========================================
+// CERTIFICATES (issued once per completed enrollment; publicly verifiable by certificateId)
+// ==========================================
+const certificateSchema = new Schema(
+  {
+    certificateId: { type: String, required: true, unique: true },
+    enrollment: { type: Schema.Types.ObjectId, ref: 'Enrollment', required: true, unique: true },
+    student: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+    // Snapshot so the certificate stays correct if names/titles are edited later.
+    studentName: { type: String, required: true },
+    courseTitle: { type: String, required: true },
+    instructorName: { type: String, default: '' },
+    lessonsTotal: { type: Number, required: true },
+    quizAverage: { type: Number, default: null },
+    issuedAt: { type: Date, default: Date.now },
+    revokedAt: { type: Date, default: undefined }
+  },
+  { timestamps: true, versionKey: false }
+);
+export const Certificate = model('Certificate', certificateSchema, 'learnlive_certificates');

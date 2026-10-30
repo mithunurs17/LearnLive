@@ -6,6 +6,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "worker": "node src/workers/videoWorker.js",
+    "check:worker": "node --check src/workers/videoWorker.js && node --check src/courseRoutes.js && node --check src/studentRoutes.js",
     "check": "node --check src/index.js && node --check src/authRoutes.js && node --check src/middleware.js && node --check src/models.js"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "mongoose": "^8.9.5",
     "multer": "^1.4.5-lts.1",
     "pdfkit": "^0.16.0",
+    "qrcode": "^1.5.4",
     "razorpay": "^2.9.5",
     "zod": "^4.6.7"
   },

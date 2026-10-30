@@ -140,3 +140,13 @@
 @media(max-width:640px){.liveFormRow{grid-template-columns:1fr}}
 .mediaBlocked{max-width:640px;margin:10px auto}.mediaBlocked code{background:#f2eaf1;padding:1px 6px;border-radius:5px}
 .catalogTools{display:flex;align-items:center;gap:12px}
+
+/* ===== Certificates ===== */
+.learningCertificate .certMissing{margin:6px 0 0;padding-left:18px;color:#5f565f;font-size:14px}
+.learningCertificate:not(.ready){background:#fcfafb;border:1px dashed #d9cfd7}
+.learningCertificate .primary:disabled{opacity:.45;cursor:not-allowed}
+.verifyPage{padding-top:32px;max-width:640px}.verifyPage h1{margin:6px 0}
+.verifyCard{margin:20px 0}.verifyCard.ok{border-color:#9bd3b0}.verifyCard.bad{border-color:#f0b4b4}
+.verifyBadge{display:inline-block;font-weight:800;border-radius:20px;padding:5px 14px;margin-bottom:12px;background:#e9f6ee;color:#1f7a45}
+.verifyCard.bad .verifyBadge{background:#fdecec;color:#9b2c2c}
+.verifyCard dl{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;margin:0 0 12px}.verifyCard dt{color:#837a84}.verifyCard dd{margin:0;font-weight:600}

@@ -6,6 +6,7 @@ export default function StudentLearning(){
   const [quizIndex,setQuizIndex]=useState(0),[answers,setAnswers]=useState({}),[result,setResult]=useState(null);
   const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
   const videoRef=useRef(null);
+  const [cs,setCs]=useState(null);
   async function refresh(preferred){
     setLoading(true);setError('');
     try{const r=await api.get('/learning/enrollments');const rows=r.data.enrollments||[];setItems(rows);const next=preferred||selectedId;setSelectedId(rows.some(x=>x.id===next)?next:(rows[0]?.id||''));}
@@ -31,7 +32,8 @@ export default function StudentLearning(){
   function selectCourse(id){setSelectedId(id);setLessonIndex(0);setQuizIndex(0);setAnswers({});setResult(null);setMessage('');}
   async function completeLesson(){if(!enrollment)return;setBusy(true);setMessage('');setError('');try{await api.post(`/learning/enrollments/${enrollment.id}/lessons/${lessonIndex}/complete`);setMessage('Lesson progress saved.');await refresh(enrollment.id);}catch(e){setError(e.response?.data?.error||'Could not save progress.');}finally{setBusy(false)}}
   async function submitQuiz(e){e.preventDefault();if(!enrollment||!quiz)return;setBusy(true);setError('');setMessage('');setResult(null);try{const payload=quiz.questions.map((_,i)=>answers[i]===undefined?null:Number(answers[i]));const r=await api.post(`/learning/enrollments/${enrollment.id}/quizzes/${quizIndex}/submit`,{answers:payload});setResult(r.data);setMessage(`Attempt ${r.data.attemptNumber} recorded.`);await refresh(enrollment.id);}catch(e){setError(e.response?.data?.error||'Quiz submission failed.');}finally{setBusy(false)}}
-  async function certificate(){try{const r=await api.get(`/enrollments/${enrollment.id}/certificate`,{responseType:'blob'});const url=URL.createObjectURL(r.data);const a=document.createElement('a');a.href=url;a.download='LearnLive-Certificate.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){setError(e.response?.data?.error||'Certificate could not be downloaded.')}}
+  useEffect(()=>{if(!selectedId){setCs(null);return;}let live=true;api.get(`/enrollments/${selectedId}/certificate/status`).then(r=>{if(live)setCs(r.data)}).catch(()=>{if(live)setCs(null)});return()=>{live=false};},[selectedId,items]);
+  async function certificate(){try{const r=await api.get(`/enrollments/${enrollment.id}/certificate`,{responseType:'blob'});const url=URL.createObjectURL(r.data);const a=document.createElement('a');a.href=url;a.download='LearnLive-Certificate.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){let msg='Certificate could not be downloaded.';try{const t=await e.response?.data?.text?.();if(t)msg=JSON.parse(t).error||msg}catch{}setError(msg)}}
   if(loading)return <section className="panel learningPanel"><p className="muted">Loading your learning space…</p></section>;
   return <section className="learningPanel">
     <div className="learningHeader"><div><span className="eyebrow">YOUR CLASSROOM</span><h2>Pick up where you left off.</h2><p className="muted">Lessons, quizzes and progress in one learning space.</p></div><button className="small" onClick={()=>refresh(enrollment?.id)}>Refresh</button></div>
@@ -48,7 +50,7 @@ export default function StudentLearning(){
             {!lesson&&!quiz&&<div className="learningEmpty"><h3>You're ready to learn.</h3><p>This course doesn't have lesson content yet.</p></div>}
           </div>
         </div>
-        {enrollment.completedAt&&<div className="learningCertificate"><div><b>Course completed 🎉</b><p>You've completed all lessons. Your certificate is ready.</p></div><button className="primary" onClick={certificate}>Download certificate</button></div>}
+        <div className={`learningCertificate ${cs?.eligible?'ready':''}`}><div>{cs?.eligible?<><b>Course completed 🎉</b><p>All lessons and quizzes are done. Your certificate is ready{cs.certificate?` · ID ${cs.certificate.certificateId}`:''}.</p></>:<><b>Certificate of Completion</b><p>Finish these to unlock your certificate:</p><ul className="certMissing">{(cs?.missing||['Checking your progress…']).map((m,i)=><li key={i}>{m}</li>)}</ul></>}</div><button className="primary" disabled={!cs?.eligible} onClick={certificate}>Download certificate</button></div>
       </>}
     </>}
   </section>;
