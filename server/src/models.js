@@ -499,3 +499,40 @@ export const BootstrapMarker = model(
   bootstrapMarkerSchema,
   'auth_bootstrap_markers'
 );
+
+// ==========================================
+// LIVE CLASSES + ATTENDANCE
+// ==========================================
+const liveClassSchema = new Schema(
+  {
+    course: { type: Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+    instructor: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    title: { type: String, required: true, trim: true, minlength: 3, maxlength: 180 },
+    description: { type: String, default: '', maxlength: 4000 },
+    startsAt: { type: Date, required: true, index: true },
+    durationMin: { type: Number, required: true, min: 5, max: 480, default: 60 },
+    status: { type: String, enum: ['scheduled', 'live', 'ended', 'cancelled'], default: 'scheduled', index: true },
+    roomName: { type: String, required: true, unique: true },
+    startedAt: Date,
+    endedAt: Date
+  },
+  { timestamps: true, versionKey: false }
+);
+export const LiveClass = model('LiveClass', liveClassSchema, 'learnlive_classes');
+
+const liveAttendanceSchema = new Schema(
+  {
+    liveClass: { type: Schema.Types.ObjectId, ref: 'LiveClass', required: true },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    role: { type: String, enum: ['student', 'instructor', 'admin'], required: true },
+    firstJoinedAt: { type: Date, required: true },
+    lastSeenAt: { type: Date, required: true },
+    totalSeconds: { type: Number, default: 0 },
+    // Each connection is a session; lastSeenAt is refreshed by heartbeats so a crashed tab still counts.
+    sessions: [{ joinedAt: Date, leftAt: Date, lastSeenAt: Date }]
+  },
+  { timestamps: true, versionKey: false }
+);
+liveAttendanceSchema.index({ liveClass: 1, user: 1 }, { unique: true });
+// Dedicated collection name: an older `liveattendances` collection may carry a stale unique index (session+student).
+export const LiveAttendance = model('LiveAttendance', liveAttendanceSchema, 'learnlive_class_attendance');

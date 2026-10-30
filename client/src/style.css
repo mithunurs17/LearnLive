@@ -110,3 +110,32 @@
 .learningCertificate{display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(135deg,#f7f1f6,#efe3ed);border-radius:16px;padding:18px 20px}
 .learningCertificate p{margin:2px 0 0;color:#5f565f}
 @media(max-width:860px){.learningCourseMeta,.learningWorkspace{grid-template-columns:1fr}.learningSidebar{position:static;max-height:none}.learningHeader{flex-direction:column}.learningCertificate,.quizResult{flex-direction:column;align-items:flex-start}}
+
+/* ===== Live classes ===== */
+.livePage{padding-top:28px}
+.liveScheduler .studioForm label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#684b65;font-weight:600}
+.liveScheduler select,.liveScheduler input,.liveScheduler textarea{font:inherit}
+.liveFormRow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.liveActions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.liveSection{margin:26px 0}.liveSection h2{font-size:20px;margin:0 0 12px}.liveSection h2 small{color:#837a84;font-weight:500}
+.liveGrid{display:grid;gap:14px}
+.liveCard{background:#fff;border:1px solid #eee9ed;border-radius:16px;padding:18px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-start}
+.liveCard.live{border-color:#d4455d;box-shadow:0 0 0 1px #d4455d inset}
+.liveCard.cancelled{opacity:.6}
+.liveCardMain{flex:1 1 320px;min-width:0}.liveCardMain h3{margin:6px 0 4px;font-size:19px}.liveCardMain p{margin:4px 0}
+.liveCardTop{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.liveMeta{font-size:13.5px;color:#5f565f}
+.liveCardActions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.liveBadge{display:inline-block;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;background:#f2eaf1;color:#684b65}
+.liveBadge.live{background:#fde7ea;color:#c0344b}.liveBadge.ended{background:#e9f6ee;color:#1f7a45}.liveBadge.cancelled{background:#eee;color:#777}
+.attendance{flex:1 1 100%;border-top:1px solid #eee9ed;padding-top:12px;overflow-x:auto}
+.attendance table{width:100%;border-collapse:collapse;font-size:13.5px}
+.attendance th{text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#95688c;padding:6px 8px}
+.attendance td{padding:8px;border-top:1px solid #f1ecf0;vertical-align:top}
+.preJoinWrap{max-width:560px;margin:10px auto}
+.liveRoomPage{display:flex;flex-direction:column;height:calc(100vh - 72px);background:#111}
+.liveRoomBar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:#fff;flex-wrap:wrap}
+.liveRoomBar>div:first-child{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.liveRoomStage{flex:1;min-height:0}.liveRoomStage .lk-room-container,.liveRoomStage .lk-video-conference{height:100%}
+@media(max-width:640px){.liveFormRow{grid-template-columns:1fr}}
+.mediaBlocked{max-width:640px;margin:10px auto}.mediaBlocked code{background:#f2eaf1;padding:1px 6px;border-radius:5px}
