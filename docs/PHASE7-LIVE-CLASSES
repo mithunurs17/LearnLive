@@ -1,0 +1,32 @@
+# Phase 5 — Live classes, scheduling, chat & attendance
+
+## Routes
+- `POST /api/live/sessions` — instructor/admin schedules a session for an owned course.
+- `GET /api/live/sessions` — instructor sessions, student-enrolled course sessions, or admin sessions.
+- `PATCH /api/live/sessions/:id` — edit session metadata/status or cancel (owner/admin only).
+- `POST /api/live/sessions/:id/join` — creates a short-lived, room-scoped LiveKit token after enrollment/ownership checks.
+- `POST /api/live/sessions/:id/attendance/heartbeat` — authenticated attendance heartbeat.
+- `POST /api/live/sessions/:id/attendance/leave` — marks student left.
+- `GET /api/live/sessions/:id/attendance` — instructor attendance roster.
+
+## Environment
+Set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET` in server env. LiveKit chat is provided by the LiveKit `VideoConference` UI.
+
+## Attendance behavior
+Students are added when they request a session join. The client sends a heartbeat every 30 seconds while connected. Attendance seconds accumulate by elapsed time between pulses, capped at 45 seconds per pulse. Browser closure/network failure can delay leave marking; treat heartbeat-based attendance as approximate.
+
+## Test checklist
+1. Instructor schedules session for own course; scheduling another instructor's course returns 403.
+2. Student with enrollment sees the session; a non-enrolled student cannot join.
+3. Room is unavailable before its 15-minute join window.
+4. Instructor and eligible student receive LiveKit token scoped to that session's private room.
+5. Verify in-room video/audio and built-in chat with two test accounts.
+6. Student heartbeat increments attendance, leave sets state to left, reconnect increments join count.
+7. Instructor sees only owned session attendance; another instructor receives 403.
+8. Cancelled/completed sessions cannot be joined.
+
+## Operational notes
+- Configure LiveKit networking, TLS, quotas, and credentials. Never expose API secret in frontend.
+- Session lifecycle changes are API-driven; production may add LiveKit webhooks for authoritative room participant events.
+- Attendance indicates connected presence only, not focus or participation.
+- For scale, consider a unique index migration and retention/export policy for attendance records.
