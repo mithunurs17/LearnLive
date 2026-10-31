@@ -460,9 +460,41 @@ const paymentSchema = new Schema(
 
     status: {
       type: String,
-      enum: ['created', 'paid', 'failed'],
+      enum: ['created', 'paid', 'failed', 'refunded'],
       default: 'created'
-    }
+    },
+
+    // ---- Razorpay checkout / earnings / refunds (added) ----
+    // Course owner at purchase time. Older payments may not have it (earnings fall back to course.instructor).
+    instructor: { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    currency: { type: String, default: 'INR' },
+    method: { type: String, default: undefined },
+    paidAt: { type: Date, default: undefined },
+    failureReason: { type: String, maxlength: 500, default: undefined },
+
+    // Revenue split snapshot, frozen when the order is created so later fee changes never rewrite history.
+    platformFeePercent: { type: Number, min: 0, max: 100, default: undefined },
+    platformFeePaise: { type: Number, min: 0, default: undefined },
+    instructorSharePaise: { type: Number, min: 0, default: undefined },
+
+    // Refund ledger. Totals are denormalised from `refunds` (failed refunds excluded) so reports stay cheap.
+    refunds: [
+      {
+        refundId: { type: String, required: true },
+        amountPaise: { type: Number, required: true, min: 0 },
+        status: { type: String, enum: ['pending', 'processed', 'failed'], default: 'pending' },
+        reason: { type: String, maxlength: 500, default: '' },
+        source: { type: String, enum: ['app', 'razorpay'], default: 'app' },
+        requestedBy: { type: Schema.Types.ObjectId, ref: 'User', default: undefined },
+        createdAt: { type: Date, default: Date.now },
+        processedAt: { type: Date, default: undefined }
+      }
+    ],
+    refundedPaise: { type: Number, default: 0, min: 0 },
+    instructorShareReversedPaise: { type: Number, default: 0, min: 0 },
+
+    // Short-lived mutex so two concurrent refund requests cannot both hit Razorpay.
+    refundLockedAt: { type: Date, default: undefined }
   },
   {
     timestamps: true,
@@ -470,7 +502,24 @@ const paymentSchema = new Schema(
   }
 );
 
+paymentSchema.index({ paymentId: 1 }, { sparse: true });
+paymentSchema.index({ instructor: 1, status: 1, createdAt: -1 });
+paymentSchema.index({ student: 1, createdAt: -1 });
+
 export const Payment = model('Payment', paymentSchema);
+
+// ==========================================
+// RAZORPAY WEBHOOK EVENTS (idempotency log; auto-expires after 30 days)
+// ==========================================
+const webhookEventSchema = new Schema(
+  {
+    _id: { type: String, required: true },
+    event: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now, expires: 60 * 60 * 24 * 30 }
+  },
+  { versionKey: false }
+);
+export const WebhookEvent = model('WebhookEvent', webhookEventSchema, 'learnlive_webhook_events');
 
 
 // ==========================================
