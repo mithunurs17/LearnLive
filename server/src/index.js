@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';import cors from 'cors';import helmet from 'helmet';import rateLimit from 'express-rate-limit';import mongoose from 'mongoose';import bcrypt from 'bcryptjs';import crypto from 'node:crypto';import Razorpay from 'razorpay';import PDFDocument from 'pdfkit';import {AccessToken} from 'livekit-server-sdk';import {Queue} from 'bullmq';import IORedis from 'ioredis';import {User,Course,Enrollment,Payment,LiveClass,LiveAttendance} from './models.js';import {auth,roles} from './middleware.js';import authRoutes from './authRoutes.js';import courseRoutes from './courseRoutes.js';import studentRoutes from './studentRoutes.js';import liveRoutes from './liveRoutes.js';import certificateRoutes from './certificateRoutes.js';import paymentRoutes,{earningsRouter,webhookHandler} from './paymentRoutes.js';
-const app=express();app.use(helmet());app.use(cors({origin:process.env.CLIENT_ORIGIN?.split(',')||'http://localhost:5173'}));
+const app=express();app.set('trust proxy',1);app.use(helmet());app.use(cors({origin:process.env.CLIENT_ORIGIN?.split(',')||'http://localhost:5173'}));
 // Razorpay webhook needs the exact raw bytes for signature verification, so it is mounted before express.json().
 app.post('/api/payments/webhook',express.raw({type:'*/*',limit:'1mb'}),webhookHandler);
 app.use(express.json({limit:'1mb'}));app.use('/api',rateLimit({windowMs:60000,limit:120}));
